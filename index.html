@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Membro - UPH Parque Paulista</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="LOGOIPB2.png" alt="Logo da empresa" class="logo">
+            <h1>📋 Ficha de Membro</h1>
+            <p>Igreja Presbiteriana do Brasil - Getsêmani - Parque Paulista</p>
+        </div>
+
+        <!-- Seletor de Modo -->
+        <div class="mode-selector">
+            <button class="mode-btn" onclick="showMode('member')">👤 Cadastro de Membro</button>
+            <button class="mode-btn" onclick="showMode('admin')">🔐 Área Administrativa</button>
+        </div>
+
+        <!-- MODO MEMBRO - Apenas Formulário -->
+        <div id="memberMode" class="mode-content active">
+            <div class="welcome-message">
+                <h2>Bem-vindo(a)! 👋</h2>
+                <p>Por favor, preencha seus dados abaixo. Suas informações serão armazenadas de forma segura.</p>
+            </div>
+
+            <form id="memberForm">
+                <div class="section">
+                    <h2>Dados Pessoais</h2>
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label for="nome">Nome Completo *</label>
+                            <input type="text" id="nome" name="nome" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label for="endereco">Endereço *</label>
+                            <input type="text" id="endereco" name="endereco" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cidade">Cidade/UF *</label>
+                            <input type="text" id="cidade" name="cidade" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pais">País</label>
+                            <input type="text" id="pais" name="pais" value="Brasil">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cep">CEP</label>
+                            <input type="text" id="cep" name="cep" placeholder="00000-000">
+                        </div>
+                        <div class="form-group">
+                            <label for="celular">Celular *</label>
+                            <input type="tel" id="celular" name="celular" placeholder="(00) 00000-0000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefone">Telefone</label>
+                            <input type="tel" id="telefone" name="telefone" placeholder="(00) 0000-0000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label for="email">E-mail *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dataNascimento">Data de Nascimento *</label>
+                            <input type="date" id="dataNascimento" name="dataNascimento" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="naturalidade">Naturalidade</label>
+                            <input type="text" id="naturalidade" name="naturalidade">
+                        </div>
+                        <div class="form-group">
+                            <label for="sexo">Sexo *</label>
+                            <select id="sexo" name="sexo" required>
+                                <option value="">Selecione</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Feminino">Feminino</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Dados Complementares</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="estadoCivil">Estado Civil</label>
+                            <select id="estadoCivil" name="estadoCivil">
+                                <option value="">Selecione</option>
+                                <option value="Solteiro(a)">Solteiro(a)</option>
+                                <option value="Casado(a)">Casado(a)</option>
+                                <option value="Divorciado(a)">Divorciado(a)</option>
+                                <option value="Viúvo(a)">Viúvo(a)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="rg">RG</label>
+                            <input type="text" id="rg" name="rg">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nomeConjuge">Nome do Cônjuge</label>
+                            <input type="text" id="nomeConjuge" name="nomeConjuge">
+                        </div>
+                        <div class="form-group">
+                            <label for="dataCasamento">Data do Casamento</label>
+                            <input type="date" id="dataCasamento" name="dataCasamento">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="escolaridade">Escolaridade</label>
+                            <select id="escolaridade" name="escolaridade">
+                                <option value="">Selecione</option>
+                                <option value="Fundamental Incompleto">Fundamental Incompleto</option>
+                                <option value="Fundamental Completo">Fundamental Completo</option>
+                                <option value="Médio Incompleto">Médio Incompleto</option>
+                                <option value="Médio Completo">Médio Completo</option>
+                                <option value="Superior Incompleto">Superior Incompleto</option>
+                                <option value="Superior Completo">Superior Completo</option>
+                                <option value="Pós-graduação">Pós-graduação</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="profissao">Profissão</label>
+                            <input type="text" id="profissao" name="profissao">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nomePai">Nome do Pai</label>
+                            <input type="text" id="nomePai" name="nomePai">
+                        </div>
+                        <div class="form-group">
+                            <label for="nomeMae">Nome da Mãe</label>
+                            <input type="text" id="nomeMae" name="nomeMae">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Dados Eclesiásticos</h2>
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label>Tipo de Membro *</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="radio" name="tipoMembro" value="Membro Comungante" required>
+                                    Membro Comungante
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="tipoMembro" value="Membro Não Comungante">
+                                    Membro Não Comungante
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="tipoMembro" value="Não Membro">
+                                    Não Membro
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label>Cargo</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="radio" name="cargo" value="Não oficial">
+                                    Não oficial
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="cargo" value="Diácono">
+                                    Diácono
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="cargo" value="Presbítero">
+                                    Presbítero
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Batismo</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dataBatismo">Data</label>
+                            <input type="date" id="dataBatismo" name="dataBatismo">
+                        </div>
+                        <div class="form-group">
+                            <label for="pastorBatismo">Pastor</label>
+                            <input type="text" id="pastorBatismo" name="pastorBatismo">
+                        </div>
+                        <div class="form-group">
+                            <label for="igrejaBatismo">Igreja</label>
+                            <input type="text" id="igrejaBatismo" name="igrejaBatismo">
+                        </div>
+                    </div>
+
+                    <h3>Profissão de Fé</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dataProfissao">Data</label>
+                            <input type="date" id="dataProfissao" name="dataProfissao">
+                        </div>
+                        <div class="form-group">
+                            <label for="pastorProfissao">Pastor</label>
+                            <input type="text" id="pastorProfissao" name="pastorProfissao">
+                        </div>
+                        <div class="form-group">
+                            <label for="igrejaProfissao">Igreja</label>
+                            <input type="text" id="igrejaProfissao" name="igrejaProfissao">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="consent">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="consentimento" name="consentimento" required>
+                            Reconheço que estou fornecendo estas informações de forma voluntária e consciente, necessárias para manter o Rol de Membros da Igreja atualizado. Autorizo que estas sejam armazenadas com segurança e entendo que não serão compartilhadas com terceiros para fins comerciais.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">💾 Enviar Cadastro</button>
+                    <button type="reset" class="btn-secondary">🔄 Limpar Formulário</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- MODO ADMIN - Visualização e Exportação -->
+        <div id="adminMode" class="mode-content">
+            <div class="admin-login" id="adminLogin">
+                <h2>🔐 Acesso Administrativo</h2>
+                <p>Digite a senha para acessar os dados dos membros</p>
+                <div class="login-form">
+                    <input type="password" id="adminPassword" placeholder="Senha de administrador">
+                    <button onclick="checkAdminPassword()" class="btn-primary">Entrar</button>
+                </div>
+                <p class="hint">💡 Senha padrão: <code></code></p>
+            </div>
+
+            <div class="admin-panel" id="adminPanel" style="display: none;">
+                <div class="list-header">
+                    <h2>📊 Membros Cadastrados (<span id="totalMembros">0</span>)</h2>
+                    <div class="admin-actions">
+                        <button onclick="exportToExcel()" class="btn-export">📥 Exportar Excel</button>
+                        <button onclick="logout()" class="btn-secondary">🚪 Sair</button>
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Pesquisar por nome, email ou telefone..." onkeyup="filterMembers()">
+                </div>
+
+                <div id="membersList" class="members-list"></div>
+            </div>
+        </div>
+
+        <div id="notification" class="notification"></div>
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

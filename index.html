@@ -24,6 +24,9 @@ function showMode(mode) {
             document.getElementById('adminLogin').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
             loadAndDisplayMembers(); // Carrega os dados da planilha ao entrar no painel
+        } else {
+            // Garante que o painel de login seja exibido se o usuário não estiver logado
+            document.getElementById('adminLogin').style.display = 'block';
         }
     }
 }
@@ -135,9 +138,14 @@ async function sendToGoogleSheet(data) {
             redirect: 'follow'
         });
 
-        // Adiciona à lista local para atualizar o painel de admin sem recarregar
-        membersDatabase.push(data);
-        updateMemberCount();
+        // Se o painel de admin estiver visível, recarrega a lista para mostrar o novo membro.
+        // Caso contrário, apenas atualiza o contador de forma otimista.
+        if (isAdminLoggedIn && document.getElementById('adminPanel').style.display === 'block') {
+            await loadAndDisplayMembers();
+        } else {
+            membersDatabase.push(data); // Adiciona localmente para o contador
+            updateMemberCount();
+        }
     } catch (error) {
         console.error('Erro ao enviar para o Google Sheet:', error);
         throw error;
@@ -147,9 +155,24 @@ async function sendToGoogleSheet(data) {
 // Carrega e exibe os membros da Planilha Google
 async function loadAndDisplayMembers() {
     showLoading(true);
+    const membersList = document.getElementById('membersList');
+
+    // Adiciona um estado de "carregando" na lista para melhor feedback visual
+    membersList.innerHTML = `
+        <div class="empty-state">
+            <h3>🔄 Carregando membros...</h3>
+            <p>Aguarde enquanto buscamos os dados na planilha.</p>
+        </div>
+    `;
     try {
         // Adiciona um parâmetro 'action=read' para o script do Google saber o que fazer
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=read`);
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=read`, {
+            method: 'GET',
+            mode: 'cors', // Explicitamente define o modo para permitir a leitura da resposta
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -167,7 +190,6 @@ async function loadAndDisplayMembers() {
         console.error('Erro ao carregar membros:', error);
         showNotification('❌ Erro ao carregar membros da planilha.', 'error');
         // Exibe o painel de admin com uma mensagem de erro
-        const membersList = document.getElementById('membersList');
         membersList.innerHTML = `
             <div class="empty-state">
                 <h3>⚠️ Falha na Conexão</h3>
@@ -395,3 +417,4 @@ const maskCep = (value) => value.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
 document.getElementById('celular').addEventListener('input', (e) => applyMask(e, maskCelular));
 document.getElementById('telefone').addEventListener('input', (e) => applyMask(e, maskTelefone));
 document.getElementById('cep').addEventListener('input', (e) => applyMask(e, maskCep));
+

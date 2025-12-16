@@ -1,7 +1,7 @@
 // Configuração
 const ADMIN_PASSWORD = 'admin2026'; // Altere esta senha
 // Cole aqui a URL do seu App da Web do Google Apps Script
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzrktTy86qd_f7WvEmv6BplE_x534I_BoKZWqGRF64LFo75wgBRfjaeg7_ZxY4w_tUNgQ/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycbrHL1NIrljTUki41cc9HVDjY40G38E4tiRzeeoDqFW5F2Fk2a4YGP4HTla2gHcxR/exec';
 let isAdminLoggedIn = false;
 let membersDatabase = [];
 
@@ -417,3 +417,4 @@ const maskCep = (value) => value.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
 document.getElementById('celular').addEventListener('input', (e) => applyMask(e, maskCelular));
 document.getElementById('telefone').addEventListener('input', (e) => applyMask(e, maskTelefone));
 document.getElementById('cep').addEventListener('input', (e) => applyMask(e, maskCep));
+

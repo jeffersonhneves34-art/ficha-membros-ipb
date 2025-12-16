@@ -1,11 +1,13 @@
 // Configuração
 const ADMIN_PASSWORD = 'admin2026'; // Altere esta senha
+// Cole aqui a URL do seu App da Web do Google Apps Script
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzrktTy86qd_f7WvEmv6BplE_x534I_BoKZWqGRF64LFo75wgBRfjaeg7_ZxY4w_tUNgQ/exec';
 let isAdminLoggedIn = false;
 let membersDatabase = [];
 
 // Inicialização
-window.addEventListener('DOMContentLoaded', async () => {
-    await loadMembersFromStorage();
+window.addEventListener('DOMContentLoaded', () => {
+    // Os dados agora são carregados sob demanda no painel de admin
     updateMemberCount();
 });
 
@@ -21,7 +23,10 @@ function showMode(mode) {
         if (isAdminLoggedIn) {
             document.getElementById('adminLogin').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
-            displayMembers();
+            loadAndDisplayMembers(); // Carrega os dados da planilha ao entrar no painel
+        } else {
+            // Garante que o painel de login seja exibido se o usuário não estiver logado
+            document.getElementById('adminLogin').style.display = 'block';
         }
     }
 }
@@ -34,7 +39,7 @@ function checkAdminPassword() {
         isAdminLoggedIn = true;
         document.getElementById('adminLogin').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
-        displayMembers();
+        loadAndDisplayMembers();
         showNotification('✅ Login realizado com sucesso!', 'success');
     } else {
         showNotification('❌ Senha incorreta!', 'error');
@@ -56,6 +61,14 @@ document.getElementById('memberForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     showLoading(true);
+
+    // Validação do consentimento
+    const consentimentoChecked = document.getElementById('consentimento').checked;
+    if (!consentimentoChecked) {
+        showLoading(false);
+        showNotification('❌ É necessário concordar com o uso dos dados para continuar.', 'error');
+        return;
+    }
     
     const formData = new FormData(e.target);
     const memberData = {
@@ -88,12 +101,12 @@ document.getElementById('memberForm').addEventListener('submit', async (e) => {
         dataProfissao: formData.get('dataProfissao'),
         pastorProfissao: formData.get('pastorProfissao'),
         igrejaProfissao: formData.get('igrejaProfissao'),
-        consentimento: formData.get('consentimento') === 'on'
+        consentimento: consentimentoChecked,
     };
     
     try {
         // Salvar no armazenamento compartilhado
-        await saveMemberToStorage(memberData);
+        await sendToGoogleSheet(memberData);
         
         showLoading(false);
         showNotification('✅ Cadastro enviado com sucesso! Obrigado por preencher seus dados.', 'success');
@@ -111,34 +124,80 @@ document.getElementById('memberForm').addEventListener('submit', async (e) => {
     }
 });
 
-// Salvar membro no storage compartilhado
-async function saveMemberToStorage(memberData) {
+// Enviar dados para a Planilha Google
+async function sendToGoogleSheet(data) {
     try {
-        // Adicionar à lista local
-        membersDatabase.push(memberData);
-        
-        // Salvar no storage compartilhado
-        const storageData = JSON.stringify(membersDatabase);
-        await window.storage.set('uph_members_database', storageData, true);
-        
-        updateMemberCount();
-        return true;
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Importante para evitar erros de CORS
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+            redirect: 'follow'
+        });
+
+        // Se o painel de admin estiver visível, recarrega a lista para mostrar o novo membro.
+        // Caso contrário, apenas atualiza o contador de forma otimista.
+        if (isAdminLoggedIn && document.getElementById('adminPanel').style.display === 'block') {
+            await loadAndDisplayMembers();
+        } else {
+            membersDatabase.push(data); // Adiciona localmente para o contador
+            updateMemberCount();
+        }
     } catch (error) {
-        console.error('Erro ao salvar:', error);
+        console.error('Erro ao enviar para o Google Sheet:', error);
         throw error;
     }
 }
 
-// Carregar membros do storage
-async function loadMembersFromStorage() {
+// Carrega e exibe os membros da Planilha Google
+async function loadAndDisplayMembers() {
+    showLoading(true);
+    const membersList = document.getElementById('membersList');
+
+    // Adiciona um estado de "carregando" na lista para melhor feedback visual
+    membersList.innerHTML = `
+        <div class="empty-state">
+            <h3>🔄 Carregando membros...</h3>
+            <p>Aguarde enquanto buscamos os dados na planilha.</p>
+        </div>
+    `;
     try {
-        const result = await window.storage.get('uph_members_database', true);
-        if (result && result.value) {
-            membersDatabase = JSON.parse(result.value);
+        // Adiciona um parâmetro 'action=read' para o script do Google saber o que fazer
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=read`, {
+            method: 'GET',
+            mode: 'cors', // Explicitamente define o modo para permitir a leitura da resposta
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        // Verifica se a resposta do script foi bem-sucedida
+        if (data.status === 'success') {
+            membersDatabase = data.data;
+            updateMemberCount();
+            displayMembers();
+        } else {
+            throw new Error(data.message || 'Falha ao carregar dados da planilha.');
         }
     } catch (error) {
-        console.log('Nenhum dado encontrado ainda');
-        membersDatabase = [];
+        console.error('Erro ao carregar membros:', error);
+        showNotification('❌ Erro ao carregar membros da planilha.', 'error');
+        // Exibe o painel de admin com uma mensagem de erro
+        membersList.innerHTML = `
+            <div class="empty-state">
+                <h3>⚠️ Falha na Conexão</h3>
+                <p>Não foi possível carregar os dados da planilha. Verifique a URL do script e sua conexão.</p>
+            </div>
+        `;
+    } finally {
+        showLoading(false);
     }
 }
 
@@ -223,19 +282,29 @@ async function deleteMember(id) {
     showLoading(true);
     
     try {
-        membersDatabase = membersDatabase.filter(member => member.id !== id);
-        
-        // Atualizar storage
-        const storageData = JSON.stringify(membersDatabase);
-        await window.storage.set('uph_members_database', storageData, true);
-        
+        // Envia uma requisição para o script do Google para deletar o membro
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id: id })
+        });
+
+        // Remove o membro da lista local para atualizar a interface
+        const index = membersDatabase.findIndex(member => member.id == id); // Usar '==' pode ser mais seguro aqui
+        if (index > -1) {
+            membersDatabase.splice(index, 1);
+        }
+
+        // Atualiza a exibição
         displayMembers();
         updateMemberCount();
-        showLoading(false);
-        showNotification('🗑️ Membro excluído com sucesso!', 'success');
+        showNotification('🗑️ Membro excluído!', 'success');
     } catch (error) {
-        showLoading(false);
+        console.error('Erro ao excluir membro:', error);
         showNotification('❌ Erro ao excluir membro', 'error');
+    } finally {
+        showLoading(false);
     }
 }
 
@@ -281,13 +350,13 @@ function exportToExcel() {
     // Criar planilha
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Membros UPH");
+    XLSX.utils.book_append_sheet(wb, ws, "Membros ipb");
     
     // Largura das colunas
     ws['!cols'] = Array(28).fill({ wch: 20 });
     
     // Baixar arquivo
-    const fileName = `membros_uph_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = `membros_ipb_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
     
     showNotification('📥 Planilha exportada com sucesso!', 'success');
@@ -326,41 +395,25 @@ function showLoading(show) {
 }
 
 // Máscaras para inputs
-document.getElementById('celular').addEventListener('input', (e) => {
+function applyMask(e, maskFunction) {
     let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-    
-    if (value.length > 10) {
-        e.target.value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    } else if (value.length > 6) {
-        e.target.value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-    } else if (value.length > 2) {
-        e.target.value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-    } else {
-        e.target.value = value;
-    }
-});
+    e.target.value = maskFunction(value);
+}
 
-document.getElementById('telefone').addEventListener('input', (e) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 10) value = value.slice(0, 10);
-    
-    if (value.length > 6) {
-        e.target.value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-    } else if (value.length > 2) {
-        e.target.value = value.replace(/(\d{2})(\d{0,4})/, '($1) $2');
-    } else {
-        e.target.value = value;
-    }
-});
+const maskCelular = (value) => {
+    return value.slice(0, 11)
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2');
+};
 
-document.getElementById('cep').addEventListener('input', (e) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 8) value = value.slice(0, 8);
-    
-    if (value.length > 5) {
-        e.target.value = value.replace(/(\d{5})(\d{0,3})/, '$1-$2');
-    } else {
-        e.target.value = value;
-    }
-});
+const maskTelefone = (value) => {
+    return value.slice(0, 10)
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+};
+
+const maskCep = (value) => value.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
+
+document.getElementById('celular').addEventListener('input', (e) => applyMask(e, maskCelular));
+document.getElementById('telefone').addEventListener('input', (e) => applyMask(e, maskTelefone));
+document.getElementById('cep').addEventListener('input', (e) => applyMask(e, maskCep));

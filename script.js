@@ -114,6 +114,14 @@ document.getElementById('memberForm').addEventListener('submit', async (e) => {
         // Limpar formulário
         e.target.reset();
         
+        // Atualiza a lista local e o contador APÓS o sucesso
+        if (isAdminLoggedIn && document.getElementById('adminPanel').style.display === 'block') {
+            await loadAndDisplayMembers();
+        } else {
+            membersDatabase.push(memberData); // Adiciona localmente para o contador
+            updateMemberCount();
+        }
+        
         // Scroll para o topo
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
@@ -146,39 +154,6 @@ async function sendToGoogleSheet(data) {
         throw error; // Lança o erro para ser pego pelo bloco catch do formulário
     }
 }
-
-// ... (código existente)
-
-document.getElementById('memberForm').addEventListener('submit', async (e) => {
-    // ... (código existente do início do evento)
-    
-    try {
-        // Salvar no armazenamento compartilhado
-        await sendToGoogleSheet(memberData);
-        
-        showLoading(false);
-        showNotification('✅ Cadastro enviado com sucesso! Obrigado por preencher seus dados.', 'success');
-        
-        // Limpar formulário
-        e.target.reset();
-
-        // Atualiza a lista local e o contador APÓS o sucesso
-        if (isAdminLoggedIn && document.getElementById('adminPanel').style.display === 'block') {
-            await loadAndDisplayMembers();
-        } else {
-            membersDatabase.push(memberData); // Adiciona localmente para o contador
-            updateMemberCount();
-        }
-        
-        // Scroll para o topo
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-    } catch (error) {
-        showLoading(false);
-        showNotification('❌ Erro ao enviar cadastro. Tente novamente.', 'error');
-        console.error('Erro:', error);
-    }
-});
 
 // Carrega e exibe os membros da Planilha Google
 async function loadAndDisplayMembers() {
@@ -454,6 +429,7 @@ const maskCep = (value) => value.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
 document.getElementById('celular').addEventListener('input', (e) => applyMask(e, maskCelular));
 document.getElementById('telefone').addEventListener('input', (e) => applyMask(e, maskTelefone));
 document.getElementById('cep').addEventListener('input', (e) => applyMask(e, maskCep));
+
 
 
 

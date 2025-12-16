@@ -311,12 +311,21 @@ async function deleteMember(id) {
     
     try {
         // Envia uma requisição para o script do Google para deletar o membro
-        await fetch(GOOGLE_SCRIPT_URL, {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
+            mode: 'cors', // Padronizando para 'cors' para ler a resposta do servidor
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'delete', id: id })
         });
+
+        if (!response.ok) {
+            throw new Error(`O servidor respondeu com um erro: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.status !== 'success') {
+            throw new Error(result.message || 'O script do Google retornou um erro ao tentar excluir.');
+        }
 
         // Remove o membro da lista local para atualizar a interface
         const index = membersDatabase.findIndex(member => member.id == id); // Usar '==' pode ser mais seguro aqui
@@ -445,5 +454,6 @@ const maskCep = (value) => value.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
 document.getElementById('celular').addEventListener('input', (e) => applyMask(e, maskCelular));
 document.getElementById('telefone').addEventListener('input', (e) => applyMask(e, maskTelefone));
 document.getElementById('cep').addEventListener('input', (e) => applyMask(e, maskCep));
+
 
 

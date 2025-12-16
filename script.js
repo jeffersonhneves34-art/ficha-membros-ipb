@@ -129,7 +129,7 @@ async function sendToGoogleSheet(data) {
     try {
         await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Importante para evitar erros de CORS
+            mode: 'cors', 
             cache: 'no-cache',
             headers: {
                 'Content-Type': 'application/json',
@@ -138,19 +138,47 @@ async function sendToGoogleSheet(data) {
             redirect: 'follow'
         });
 
-        // Se o painel de admin estiver visível, recarrega a lista para mostrar o novo membro.
-        // Caso contrário, apenas atualiza o contador de forma otimista.
+        // A partir de agora, o código só continua se o fetch for bem-sucedido.
+        // A lógica de sucesso foi movida para fora do try/catch.
+
+    } catch (error) {
+        console.error('Erro ao enviar para o Google Sheet:', error);
+        throw error; // Lança o erro para ser pego pelo bloco catch do formulário
+    }
+}
+
+// ... (código existente)
+
+document.getElementById('memberForm').addEventListener('submit', async (e) => {
+    // ... (código existente do início do evento)
+    
+    try {
+        // Salvar no armazenamento compartilhado
+        await sendToGoogleSheet(memberData);
+        
+        showLoading(false);
+        showNotification('✅ Cadastro enviado com sucesso! Obrigado por preencher seus dados.', 'success');
+        
+        // Limpar formulário
+        e.target.reset();
+
+        // Atualiza a lista local e o contador APÓS o sucesso
         if (isAdminLoggedIn && document.getElementById('adminPanel').style.display === 'block') {
             await loadAndDisplayMembers();
         } else {
-            membersDatabase.push(data); // Adiciona localmente para o contador
+            membersDatabase.push(memberData); // Adiciona localmente para o contador
             updateMemberCount();
         }
+        
+        // Scroll para o topo
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
     } catch (error) {
-        console.error('Erro ao enviar para o Google Sheet:', error);
-        throw error;
+        showLoading(false);
+        showNotification('❌ Erro ao enviar cadastro. Tente novamente.', 'error');
+        console.error('Erro:', error);
     }
-}
+});
 
 // Carrega e exibe os membros da Planilha Google
 async function loadAndDisplayMembers() {
@@ -417,4 +445,5 @@ const maskCep = (value) => value.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
 document.getElementById('celular').addEventListener('input', (e) => applyMask(e, maskCelular));
 document.getElementById('telefone').addEventListener('input', (e) => applyMask(e, maskTelefone));
 document.getElementById('cep').addEventListener('input', (e) => applyMask(e, maskCep));
+
 
